@@ -5,6 +5,9 @@ import ResolvedArchive from './components/ResolvedArchive';
 import { ALL_LANGUAGES, STATES_AND_DISTRICTS, DEFAULT_HOTSPOTS, INITIAL_RESOLVED_RECORDS } from './indiaData';
 import { UI_STRINGS } from './translations';
 import './App.css';
+import { database } from './firebase';
+import { ref, onValue, set, remove } from 'firebase/database';
+
 import Map3D from './Map3D';
 
 // 1-Click Voice Simulation Audio Scripts across Indian Languages for Evaluation
@@ -41,40 +44,40 @@ function App() {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'grievance' | '3d_twin' | 'resolved_archive'
   
   // Persistent Complaint & Resolved Records State (Local Storage backed)
-  const [activeComplaints, setActiveComplaints] = useState(() => {
-    try {
-      const saved = localStorage.getItem('jandhwani_active_complaints');
-      return saved ? JSON.parse(saved) : DEFAULT_HOTSPOTS;
-    } catch {
-      return DEFAULT_HOTSPOTS;
-    }
-  });
+  const [activeComplaints, setActiveComplaints] = useState(DEFAULT_HOTSPOTS);
 
-  const [resolvedRecords, setResolvedRecords] = useState(() => {
-    try {
-      const saved = localStorage.getItem('jandhwani_resolved_records');
-      return saved ? JSON.parse(saved) : INITIAL_RESOLVED_RECORDS;
-    } catch {
-      return INITIAL_RESOLVED_RECORDS;
-    }
-  });
+  const [resolvedRecords, setResolvedRecords] = useState(INITIAL_RESOLVED_RECORDS);
 
-  // Sync to Local Storage
+  // Sync with Firebase Realtime Database
   useEffect(() => {
-    try {
-      localStorage.setItem('jandhwani_active_complaints', JSON.stringify(activeComplaints));
-    } catch (e) {
-      console.warn("Could not sync active complaints", e);
-    }
-  }, [activeComplaints]);
+    const complaintsRef = ref(database, 'complaints');
+    const unsubscribe = onValue(complaintsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const complaintsArray = Object.values(data);
+        complaintsArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setActiveComplaints(complaintsArray);
+      } else {
+        setActiveComplaints(DEFAULT_HOTSPOTS);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('jandhwani_resolved_records', JSON.stringify(resolvedRecords));
-    } catch (e) {
-      console.warn("Could not sync resolved records", e);
-    }
-  }, [resolvedRecords]);
+    const resolvedRef = ref(database, 'resolved');
+    const unsubscribe = onValue(resolvedRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const resolvedArray = Object.values(data);
+        resolvedArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setResolvedRecords(resolvedArray);
+      } else {
+        setResolvedRecords(INITIAL_RESOLVED_RECORDS);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Grievance form state
   const [text, setText] = useState('');
@@ -142,7 +145,7 @@ function App() {
         district: user.district || 'Pune'
       }));
     }
-    setActiveTab('grievance');
+    setActiveTab(user.role === 'government' ? '3d_twin' : 'grievance');
   };
 
   const handleLogout = () => {
@@ -153,7 +156,7 @@ function App() {
 
   // Clear All Active Complaints
   const handleClearAllComplaints = () => {
-    setActiveComplaints([]);
+    set(ref(database, 'complaints'), null);
     setSubmissionResult(null);
   };
 
@@ -188,8 +191,10 @@ function App() {
       country: comp?.country || 'India'
     };
 
-    setActiveComplaints(prev => prev.filter(c => c.id !== ticketId));
-    setResolvedRecords(prev => [newRecord, ...prev.filter(r => r.id !== ticketId)]);
+    // Move from complaints to resolved in Firebase
+    newRecord.timestamp = Date.now();
+    set(ref(database, 'resolved/' + ticketId), newRecord);
+    remove(ref(database, 'complaints/' + ticketId));
     if (submissionResult?.ticketId === ticketId) {
       setSubmissionResult(null);
     }
@@ -221,8 +226,10 @@ function App() {
       country: comp?.country || 'India'
     };
 
-    setActiveComplaints(prev => prev.filter(c => c.id !== ticketId));
-    setResolvedRecords(prev => [newRecord, ...prev.filter(r => r.id !== ticketId)]);
+    // Move from complaints to resolved in Firebase
+    newRecord.timestamp = Date.now();
+    set(ref(database, 'resolved/' + ticketId), newRecord);
+    remove(ref(database, 'complaints/' + ticketId));
     if (submissionResult?.ticketId === ticketId) {
       setSubmissionResult(null);
     }
@@ -718,7 +725,9 @@ function App() {
         country: 'India'
       };
 
-      setActiveComplaints(prev => [newSpot, ...prev]);
+      // Push to Firebase directly from Frontend
+      newSpot.timestamp = Date.now();
+      set(ref(database, 'complaints/' + newSpot.id), newSpot);
 
       setSubmissionResult({
         ticketId: newSpot.id,
@@ -846,17 +855,20 @@ function App() {
             className="nav-btn"
             onClick={() => setActiveTab('login')}
           >
-            {currentUser ? (t.fullName || 'Citizen Profile') : t.portalTitle}
-          </button>
-          <button 
-            type="button"
-            className={`nav-btn ${activeTab === 'grievance' ? 'active' : ''}`}
-            onClick={() => setActiveTab('grievance')}
-          >
-            {t.fileGrievanceTitle}
+            {currentUser ? (currentUser.role === 'government' ? 'Govt Profile' : (t.fullName || 'Citizen Profile')) : t.portalTitle}
           </button>
           
-          {currentUser && (
+          {(!currentUser || currentUser.role !== 'government') && (
+            <button 
+              type="button"
+              className={`nav-btn ${activeTab === 'grievance' ? 'active' : ''}`}
+              onClick={() => setActiveTab('grievance')}
+            >
+              {t.fileGrievanceTitle}
+            </button>
+          )}
+          
+          {(currentUser && currentUser.role !== 'government') && (
             <button 
               type="button"
               className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
@@ -866,6 +878,24 @@ function App() {
             </button>
           )}
 
+          {(currentUser && currentUser.role === 'government') && (
+            <>
+              <button 
+                type="button"
+                className={`nav-btn ${activeTab === '3d_twin' ? 'active' : ''}`}
+                onClick={() => setActiveTab('3d_twin')}
+              >
+                3D Digital Twin Map
+              </button>
+              <button 
+                type="button"
+                className={`nav-btn ${activeTab === 'resolved_archive' ? 'active' : ''}`}
+                onClick={() => setActiveTab('resolved_archive')}
+              >
+                Resolved Archive
+              </button>
+            </>
+          )}
         </div>
 
         {currentUser ? (
@@ -990,8 +1020,7 @@ function App() {
           <div className="card">
             <div className="card-header">
               <div className="emblem-row">
-                <span className="national-badge">🇮🇳 JanDhwani DPI</span>
-                <span className="brics-badge">🤖 Gemini Vision AI</span>
+
               </div>
               <h1 className="title">{t.portalTitle}</h1>
               <p className="subtitle">{t.fileGrievanceTitle} • {t.fileGrievanceSub}</p>
