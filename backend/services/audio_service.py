@@ -1,5 +1,4 @@
 import os
-from google.cloud import speech
 
 MOCK_MODE = os.getenv("MOCK_MODE", "true").lower() == "true"
 
@@ -11,6 +10,8 @@ def transcribe_audio(audio_content: bytes) -> str:
     if MOCK_MODE:
         print("[MOCK] Simulating audio transcription...")
         return "This is a mock transcribed text from audio."
+
+    from google.cloud import speech
 
     # Instantiate a client
     client = speech.SpeechClient()

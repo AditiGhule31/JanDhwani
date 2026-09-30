@@ -1,6 +1,4 @@
 import os
-import firebase_admin
-from firebase_admin import credentials, db
 import uuid
 import time
 
@@ -9,6 +7,8 @@ MOCK_MODE = os.getenv("MOCK_MODE", "true").lower() == "true"
 # Initialize Firebase only once
 if not MOCK_MODE:
     try:
+        import firebase_admin
+        from firebase_admin import credentials, db
         # Assuming the service account key is available in the environment or file
         cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
         if cred_path and os.path.exists(cred_path):

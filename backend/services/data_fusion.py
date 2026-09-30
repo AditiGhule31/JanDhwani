@@ -1,5 +1,4 @@
 import os
-from google.cloud import bigquery
 
 MOCK_MODE = os.getenv("MOCK_MODE", "true").lower() == "true"
 
@@ -16,6 +15,7 @@ def get_final_priority_score(district: str, base_severity: int) -> float:
         final_score = min(10.0, base_severity + vulnerability_modifier)
         return round(final_score, 1)
 
+    from google.cloud import bigquery
     client = bigquery.Client()
     
     # Example dataset: jandhwani_data.district_demographics
