@@ -145,7 +145,7 @@ function App() {
         district: user.district || 'Pune'
       }));
     }
-    setActiveTab('grievance');
+    setActiveTab(user.role === 'government' ? '3d_twin' : 'grievance');
   };
 
   const handleLogout = () => {
@@ -682,17 +682,20 @@ function App() {
             className="nav-btn"
             onClick={() => setActiveTab('login')}
           >
-            {currentUser ? (t.fullName || 'Citizen Profile') : t.portalTitle}
-          </button>
-          <button 
-            type="button"
-            className={`nav-btn ${activeTab === 'grievance' ? 'active' : ''}`}
-            onClick={() => setActiveTab('grievance')}
-          >
-            {t.fileGrievanceTitle}
+            {currentUser ? (currentUser.role === 'government' ? 'Govt Profile' : (t.fullName || 'Citizen Profile')) : t.portalTitle}
           </button>
           
-          {currentUser && (
+          {(!currentUser || currentUser.role !== 'government') && (
+            <button 
+              type="button"
+              className={`nav-btn ${activeTab === 'grievance' ? 'active' : ''}`}
+              onClick={() => setActiveTab('grievance')}
+            >
+              {t.fileGrievanceTitle}
+            </button>
+          )}
+          
+          {(currentUser && currentUser.role !== 'government') && (
             <button 
               type="button"
               className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
@@ -702,6 +705,24 @@ function App() {
             </button>
           )}
 
+          {(currentUser && currentUser.role === 'government') && (
+            <>
+              <button 
+                type="button"
+                className={`nav-btn ${activeTab === '3d_twin' ? 'active' : ''}`}
+                onClick={() => setActiveTab('3d_twin')}
+              >
+                3D Digital Twin Map
+              </button>
+              <button 
+                type="button"
+                className={`nav-btn ${activeTab === 'resolved_archive' ? 'active' : ''}`}
+                onClick={() => setActiveTab('resolved_archive')}
+              >
+                Resolved Archive
+              </button>
+            </>
+          )}
         </div>
 
         {currentUser ? (

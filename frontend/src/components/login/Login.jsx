@@ -238,6 +238,25 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
   const handleGoogleError = () => {
     setAlertInfo({ type: 'error', text: 'Google Login Failed or was cancelled' });
   };
+  const handleGovSubmit = (e) => {
+    e.preventDefault();
+    if (loginIdentifier === 'admin' && loginPassword === 'admin123') {
+      setAlertInfo({ type: 'success', text: 'Official Verified! Accessing 3D Dashboard...' });
+      setTimeout(() => {
+        onLoginSuccess({
+          fullName: 'S. K. Sharma (Collector)',
+          role: 'government',
+          district: 'Pune',
+          state: 'Maharashtra',
+          language: currentLang,
+          isLoggedIn: true
+        });
+      }, 500);
+    } else {
+      setAlertInfo({ type: 'error', text: 'Invalid Government Credentials. Use admin / admin123' });
+    }
+  };
+
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (!loginIdentifier || !loginPassword) {
@@ -414,7 +433,37 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
         </div>
       )}
 
-      {authMode === 'register' ? (
+      {authMode === 'gov_login' ? (
+        <form onSubmit={handleGovSubmit} className="auth-form" noValidate>
+          <div className="login-instructions" style={{ background: '#ffebee', color: '#b71c1c', border: '1px solid #ffcdd2' }}>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>National Digital Twin Access</p>
+            <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem' }}>Restricted to Authorized Government Officials Only.</p>
+          </div>
+
+          <div className="form-group">
+            <label>Official Govt ID <span className="req">*</span></label>
+            <input 
+              type="text" 
+              value={loginIdentifier} 
+              onChange={e => setLoginIdentifier(e.target.value)} 
+              placeholder="e.g. admin" 
+            />
+          </div>
+          <div className="form-group">
+            <label>Secure Password <span className="req">*</span></label>
+            <input 
+              type="password" 
+              value={loginPassword} 
+              onChange={e => setLoginPassword(e.target.value)} 
+              placeholder="e.g. admin123" 
+            />
+          </div>
+
+          <button type="submit" className="auth-submit-btn" style={{ background: '#b71c1c' }}>
+            Access 3D Digital Twin Map
+          </button>
+        </form>
+      ) : authMode === 'register' ? (
         /* =========================================================================
            REGISTRATION FORM (Rendered In Chosen Language Only)
            ========================================================================= */
