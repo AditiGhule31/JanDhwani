@@ -410,20 +410,30 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
 
 
       {/* Tabs switcher: Sign Up vs Login */}
-      <div className="auth-tabs">
+      <div className="auth-tabs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px' }}>
         <button 
           type="button" 
           className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
           onClick={() => { setAuthMode('register'); setAlertInfo(null); }}
+          style={{ fontSize: '0.85rem', padding: '12px 5px' }}
         >
-          {t.registerTab}
+          New Citizen Sign Up
         </button>
         <button 
           type="button" 
           className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
           onClick={() => { setAuthMode('login'); setAlertInfo(null); }}
+          style={{ fontSize: '0.85rem', padding: '12px 5px' }}
         >
-          {t.loginTab}
+          Citizen Login
+        </button>
+        <button 
+          type="button"
+          className={`auth-tab ${authMode === 'gov_login' ? 'active' : ''}`}
+          onClick={() => { setAuthMode('gov_login'); setAlertInfo(null); }}
+          style={{ fontSize: '0.85rem', padding: '12px 5px', borderBottom: authMode === 'gov_login' ? '3px solid #b71c1c' : 'none', color: authMode === 'gov_login' ? '#b71c1c' : '#666' }}
+        >
+          Govt Login
         </button>
       </div>
 
