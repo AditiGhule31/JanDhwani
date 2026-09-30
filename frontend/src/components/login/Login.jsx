@@ -15,7 +15,7 @@ import { jwtDecode } from 'jwt-decode';
 import './Login.css';
 
 // Note: Replace this Client ID with your actual Google OAuth Client ID for production
-const GOOGLE_CLIENT_ID = '378031586524-81r52r9v3430j0j95q9t4g9uq7t1i5of.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '364462220122-7qntf1pjtllbnfr24ak583f9bpgbblpu.apps.googleusercontent.com';
 
 function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageChange }) {
   // Step 0: Language Gate state
@@ -251,22 +251,8 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
     let citizen = savedUser;
 
     if (!citizen) {
-      // Fallback for demo mock logins
-      citizen = {
-        fullName: loginIdentifier.includes('@') ? loginIdentifier.split('@')[0] : `Citizen (${loginIdentifier.slice(-4)})`,
-        mobile: loginIdentifier,
-        email: loginIdentifier.includes('@') ? loginIdentifier : '',
-        aadhaar: '123456789012', // Mock existing Aadhaar
-        state: 'Maharashtra',
-        district: 'Pune',
-        areaType: 'rural',
-        tehsil: 'Haveli Taluka',
-        panchayatOrWard: 'Wagholi Panchayat',
-        pincode: '412207',
-        language: currentLang,
-        officialRouting: 'BDO Haveli & Collector Pune',
-        isLoggedIn: true
-      };
+      setAlertInfo({ type: 'error', text: 'Account not found or incorrect password. Please Sign Up first.' });
+      return;
     }
 
     setAlertInfo({ type: 'success', text: 'Verified! Redirecting...' });
@@ -503,9 +489,7 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
             </div>
           </div>
 
-            </div>
-            <div className="form-column">
-                          <div className="form-group">
+<div className="form-group">
               <label>Aadhaar Number (UIDAI) <span className="req">*</span></label>
               <input 
                 type="text"
@@ -521,104 +505,8 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
               )}
             </div>
             
-            <div className="form-group" style={{gridColumn: '1 / -1', background: '#e3f2fd', padding: '15px', borderRadius: '10px', marginTop: '10px'}}>
-              <label style={{color: '#1565c0'}}>GPS Location Verification <span className="req">*</span></label>
-              <p style={{fontSize: '0.85rem', color: '#333', marginBottom: '10px'}}>Location is mandatory to route your grievance to the correct local authority.</p>
-              <button 
-                type="button" 
-                className={`gps-btn ${gpsStatus?.granted ? 'active' : ''}`}
-                onClick={requestLocationPermission}
-                style={{width: '100%', padding: '12px', background: gpsStatus?.granted ? '#4caf50' : '#1a73e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}
-              >
-                {gpsStatus?.granted ? '✓ GPS Location Detected' : '📍 Detect My Location'}
-              </button>
-            </div>
-
-          {/* Section 2: Permanent Address */}
-          <div className="section-title" style={{marginTop: '20px'}}>
-            <span>Permanent Address</span>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>State <span className="req">*</span></label>
-              <input 
-                type="text"
-                list="state-list"
-                className={`input-field ${touched.state && errors.state ? 'input-error' : ''}`}
-                placeholder="Search or Select State"
-                value={regData.state || ''}
-                onChange={(e) => {
-                  setRegData({ ...regData, state: e.target.value, district: '', taluka: '' });
-                  validateField('state', e.target.value);
-                }}
-                onBlur={() => handleBlur('state')}
-                required
-              />
-              <datalist id="state-list">
-                {Object.keys(STATES_AND_DISTRICTS).map(s => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
-              {touched.state && errors.state && (
-                <span className="error-text">{errors.state}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>District <span className="req">*</span></label>
-              <input 
-                type="text"
-                list="district-list"
-                className={`input-field ${touched.district && errors.district ? 'input-error' : ''}`}
-                placeholder="Search or Select District"
-                value={regData.district || ''}
-                onChange={(e) => {
-                  setRegData({ ...regData, district: e.target.value, taluka: '' });
-                  validateField('district', e.target.value);
-                }}
-                onBlur={() => handleBlur('district')}
-                required
-              />
-              <datalist id="district-list">
-                {currentDistricts.map(d => (
-                  <option key={d} value={d} />
-                ))}
-              </datalist>
-              {touched.district && errors.district && (
-                <span className="error-text">{errors.district}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Taluka <span className="req">*</span></label>
-              <input 
-                type="text"
-                list="taluka-list"
-                className={`input-field ${touched.taluka && errors.taluka ? 'input-error' : ''}`}
-                placeholder="Search or Enter Taluka"
-                value={regData.taluka || ''}
-                onChange={(e) => {
-                  setRegData({ ...regData, taluka: e.target.value });
-                  validateField('taluka', e.target.value);
-                }}
-                onBlur={() => handleBlur('taluka')}
-                required
-              />
-              <datalist id="taluka-list">
-                {currentTalukas.map(t => (
-                  <option key={t} value={t} />
-                ))}
-              </datalist>
-              {touched.taluka && errors.taluka && (
-                <span className="error-text">{errors.taluka}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Section 3: Security */}
+            
+{/* Section 3: Security */}
           <div className="section-title">
             <span>{t.sec3}</span>
           </div>
@@ -663,7 +551,107 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
             </div>
           </div>
 
+
             </div>
+            <div className="form-column">
+                          <div className="form-group" style={{gridColumn: '1 / -1', background: '#e3f2fd', padding: '15px', borderRadius: '10px', marginTop: '10px'}}>
+              <label style={{color: '#1565c0'}}>{t.locModeTitle} <span className="req">*</span></label>
+              <p style={{fontSize: '0.85rem', color: '#333', marginBottom: '10px'}}>{t.locConfirmSub}</p>
+              <button 
+                type="button" 
+                className={`gps-btn ${gpsStatus?.granted ? 'active' : ''}`}
+                onClick={requestLocationPermission}
+                style={{width: '100%', padding: '12px', background: gpsStatus?.granted ? '#4caf50' : '#1a73e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}
+              >
+                {gpsStatus?.granted ? '✓ ' + t.shareGpsBtn : '📍 ' + t.shareGpsBtn}
+              </button>
+            </div>
+
+          {/* Section 2: Permanent Address */}
+          <div className="section-title" style={{marginTop: '20px'}}>
+            <span>{t.sec2}</span>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t.state} <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="state-list"
+                className={`input-field ${touched.state && errors.state ? 'input-error' : ''}`}
+                placeholder={t.state}
+                value={regData.state || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, state: e.target.value, district: '', taluka: '' });
+                  validateField('state', e.target.value);
+                }}
+                onBlur={() => handleBlur('state')}
+                required
+              />
+              <datalist id="state-list">
+                {Object.keys(STATES_AND_DISTRICTS).map(s => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+              {touched.state && errors.state && (
+                <span className="error-text">{errors.state}</span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>{t.district} <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="district-list"
+                className={`input-field ${touched.district && errors.district ? 'input-error' : ''}`}
+                placeholder={t.district}
+                value={regData.district || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, district: e.target.value, taluka: '' });
+                  validateField('district', e.target.value);
+                }}
+                onBlur={() => handleBlur('district')}
+                required
+              />
+              <datalist id="district-list">
+                {currentDistricts.map(d => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
+              {touched.district && errors.district && (
+                <span className="error-text">{errors.district}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t.tehsil} <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="taluka-list"
+                className={`input-field ${touched.taluka && errors.taluka ? 'input-error' : ''}`}
+                placeholder={t.tehsil}
+                value={regData.taluka || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, taluka: e.target.value });
+                  validateField('taluka', e.target.value);
+                }}
+                onBlur={() => handleBlur('taluka')}
+                required
+              />
+              <datalist id="taluka-list">
+                {currentTalukas.map(t => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+              {touched.taluka && errors.taluka && (
+                <span className="error-text">{errors.taluka}</span>
+              )}
+            </div>
+          </div>
+
+                      </div>
           </div>
           <button type="submit" className="auth-submit-btn">
             {t.submitSignUp}
