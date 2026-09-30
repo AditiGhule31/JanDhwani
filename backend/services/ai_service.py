@@ -11,6 +11,28 @@ SEVERITY_NUMERIC_MAP = {
     "critical": 10
 }
 
+VISION_VALIDATION_SYSTEM_PROMPT = """
+You are an uncompromising, highly rigorous Fraud Detection and Image Forensics AI officer for a government civic grievance portal. Your job is to audit citizen-submitted evidence photos against their text complaints.
+
+### Core Directive:
+Analyze the provided image and the text description of the grievance. You must rigorously verify if the visual evidence directly matches the physical problem claimed in the story. 
+
+### Strict Failure Rules (Zero Tolerance):
+1. **Unrelated Objects:** If the image shows indoor household items (e.g., curtains, walls, furniture, ceilings), selfies, random screenshots, or objects completely unrelated to the civic complaint, you MUST set `is_authentic_match` to `false` and `match_score` to `0`.
+2. **Context Mismatch:** If the complaint is about "garbage/solid waste dump" but the photo shows an indoor room or a clean street, it is a mismatch. 
+3. Do not try to be overly accommodating. If there is doubt, fail it. Government resources depend on your accuracy.
+
+### Required JSON Output Schema:
+{
+  "formal_summary": "Objective 1-2 sentence bureaucratic summary of the issue.",
+  "department": "Target department routing (e.g., Municipal Corporation, Public Works, FDA)",
+  "severity_level": "Low / Medium / High / Critical",
+  "image_match_score": <Integer between 0 and 100>,
+  "is_authentic_match": <Boolean: true or false>,
+  "verification_reasoning": "Detailed forensic explanation. State clearly what is actually visible in the photo and why it matches or fails to match the reported complaint story."
+}
+"""
+
 TRIAGE_PROMPT_TEMPLATE = """You are an expert AI triage officer for a government public grievance and consumer protection cell (similar to the FDA and CPGRAMS portal). 
 
 Your task is to analyze a citizen's complaint, which includes a narrative written in a raw, story-like format, and metadata about an attached evidence image.
@@ -23,7 +45,8 @@ Your task is to analyze a citizen's complaint, which includes a narrative writte
 ### Instructions:
 1. Summarize the core grievance objectively into a clear, professional bureaucratic summary (max 2 sentences).
 2. Extract key structured entities required for government action.
-3. Perform a cross-verification check: Does the evidence image logically support and match the narrative described in the citizen's story? Give a match score (0 to 100) and a brief justification.
+3. Perform a rigorous forensic cross-verification check: Does the evidence image directly support and match the narrative described in the citizen's story?
+   - Apply Zero Tolerance Failure Rules: If image contains indoor household items (curtains, walls, furniture, ceilings), selfies, random screenshots, or clean street when reporting garbage, set `is_authentic_match` to `false` and `match_score` to `0`.
 4. Classify the severity level (Low, Medium, High, Critical).
 5. Suggest the correct government department to route this to (e.g., Food and Drug Administration, Municipal Corporation, Public Works Department, Police).
 
@@ -59,6 +82,78 @@ def extract_complaint_data(
     """
     if MOCK_MODE:
         lower = text.lower()
+        img_lower = (image_analysis or "").lower()
+
+        # Zero-Tolerance Fraud Audit 1: Solid Black / Pitch Dark / Blank / Obstructed Lens Photo
+        is_black_fraud = any(w in img_lower for w in [
+            "black", "dark", "blank", "solid black", "pitch black", "obscured", "lens cap", "covered"
+        ]) or any(w in lower for w in ["black photo", "black image", "blank photo", "dark photo"])
+
+        if is_black_fraud:
+            dept = "Municipal Corporation / Fraud Audit Cell"
+            sev = "Low"
+            summary = "Grievance flagged for rejection: Submitted evidence photo is completely black/blank or lens obstructed with zero optical detail."
+            issue = "Obstructed lens / Solid black evidence"
+            base_sev = 0
+
+            return {
+                "department": dept,
+                "category": dept,
+                "severity": sev,
+                "base_severity": base_sev,
+                "formal_summary": summary,
+                "summary": summary,
+                "extracted_entities": {
+                    "incident_location": "Unverified - Black Image",
+                    "approx_date": "N/A",
+                    "suspected_violation_or_issue": issue
+                },
+                "image_verification": {
+                    "match_score": 0,
+                    "is_authentic_match": False,
+                    "reasoning": "Zero Tolerance Fraud Failure (Match Score: 0%): Submitted photo is completely black/dark with zero optical incident detail."
+                },
+                "actionable_next_steps": [
+                    "Reject grievance submission due to solid black/blank evidence photo",
+                    "Notify citizen to re-upload clear illuminated photo of reported issue"
+                ]
+            }
+
+        # Zero-Tolerance Fraud Audit 2: Check for indoor household items (curtains, walls, furniture, sofa, ceiling, room, selfie, etc.)
+        is_indoor_fraud = any(w in img_lower for w in [
+            "curtain", "indoor", "room", "wall", "ceiling", "furniture", "sofa", "bed", "selfie", "decor", "fabric", "reject"
+        ]) or any(w in lower for w in ["curtain", "indoor furniture", "curtains"])
+
+        if is_indoor_fraud:
+            dept = "Municipal Corporation / Fraud Audit Cell"
+            sev = "Low"
+            summary = "Grievance flagged for rejection: Submitted evidence photo depicts indoor household items (curtains/furniture/walls) unrelated to reported outdoor civic issue."
+            issue = "Unrelated optical evidence / Fraud audit failure"
+            base_sev = 0
+
+            return {
+                "department": dept,
+                "category": dept,
+                "severity": sev,
+                "base_severity": base_sev,
+                "formal_summary": summary,
+                "summary": summary,
+                "extracted_entities": {
+                    "incident_location": "Unverified - Evidence Mismatch",
+                    "approx_date": "N/A",
+                    "suspected_violation_or_issue": issue
+                },
+                "image_verification": {
+                    "match_score": 0,
+                    "is_authentic_match": False,
+                    "reasoning": "Zero Tolerance Fraud Failure (Match Score: 0%): Submitted photo depicts indoor household items (curtains/furniture/walls) completely unrelated to reported outdoor civic complaint."
+                },
+                "actionable_next_steps": [
+                    "Reject grievance submission due to invalid/unrelated evidence photo",
+                    "Notify citizen to re-upload clear on-ground evidence photo of reported issue"
+                ]
+            }
+
         if any(w in lower for w in ["food", "milk", "expiry", "dairy", "medicine", "adulterat", "ration", "fssai"]):
             dept = "Food and Drug Administration (FDA) & Consumer Protection"
             sev = "High"
@@ -86,6 +181,7 @@ def extract_complaint_data(
             issue = "Civic amenities deficit"
 
         base_sev = SEVERITY_NUMERIC_MAP.get(sev.lower(), 7)
+        dynamic_score = 75 + ((len(text) + len(image_analysis or '')) % 19)
 
         return {
             "department": dept,
@@ -100,9 +196,9 @@ def extract_complaint_data(
                 "suspected_violation_or_issue": issue
             },
             "image_verification": {
-                "match_score": 91,
+                "match_score": dynamic_score,
                 "is_authentic_match": True,
-                "reasoning": f"Optical evidence matches reported {issue}. Geolocation coordinates cross-verified with submission node."
+                "reasoning": f"Optical evidence matches reported {issue} with {dynamic_score}% confidence. Geolocation coordinates cross-verified with submission node."
             },
             "actionable_next_steps": [
                 f"Dispatch inspection team from {dept}",

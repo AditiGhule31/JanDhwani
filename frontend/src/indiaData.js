@@ -325,7 +325,7 @@ export const DEFAULT_HOTSPOTS = [
     routing: 'Zonal Health Officer & TANGEDCO Superintending Engineer',
     citizen: 'Meenakshi Sundaram (UID: 9444012345)',
     imageVerified: true,
-    imageConfidence: 98,
+    imageConfidence: 91,
     status: 'Emergency Backup Activated',
     timestamp: '32 mins ago',
     country: 'India'
@@ -349,7 +349,7 @@ export const DEFAULT_HOTSPOTS = [
     routing: 'Drug Controller General & Delhi State Inspector',
     citizen: 'Dr. Vivek Malhotra (UID: 9811099887)',
     imageVerified: true,
-    imageConfidence: 99,
+    imageConfidence: 88,
     status: 'Seizure Notice Issued',
     timestamp: '45 mins ago',
     country: 'India'
@@ -373,7 +373,7 @@ export const DEFAULT_HOTSPOTS = [
     routing: 'Sanitary Inspector & Gram Panchayat Secretary',
     citizen: 'Sunita Patil (UID: 9822114455)',
     imageVerified: true,
-    imageConfidence: 98,
+    imageConfidence: 84,
     coreDefect: 'Uncollected Municipal Solid Waste & Rotten Bio-Waste Pileup',
     affectedScope: '8,500+ residents, vegetable vendors & pedestrians',
     riskLevel: 'Dengue/Malaria vector outbreak risk & toxic airborne stench',
