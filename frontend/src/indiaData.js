@@ -420,3 +420,17 @@ export const INITIAL_RESOLVED_RECORDS = [
   }
 ];
 
+export const DISTRICTS_AND_TALUKAS = {
+  'Pune': ['Haveli', 'Pune City', 'Baramati', 'Shirur', 'Khed', 'Maval', 'Mulshi', 'Bhor', 'Indapur', 'Daund', 'Purandar', 'Velhe', 'Junnar', 'Ambegaon'],
+  'Mumbai City': ['Colaba', 'Byculla', 'Dadar', 'Sion', 'Mahim', 'Malabar Hill'],
+  'Mumbai Suburban': ['Andheri', 'Borivali', 'Kurla', 'Bandra', 'Goregaon', 'Malad', 'Kandivali'],
+  'Thane': ['Thane', 'Kalyan', 'Murbad', 'Bhiwandi', 'Shahapur', 'Ulhasnagar', 'Ambarnath'],
+  'Nashik': ['Nashik', 'Igatpuri', 'Dindori', 'Peint', 'Trimbakeshwar', 'Kalwan', 'Deola', 'Surgana', 'Baglan', 'Malegaon', 'Nandgaon', 'Chandwad', 'Niphad', 'Sinnar', 'Yeola'],
+  'Nagpur': ['Nagpur City', 'Nagpur Rural', 'Kamptee', 'Hingna', 'Katol', 'Narkhed', 'Savner', 'Kalameshwar', 'Ramtek', 'Mouda', 'Parseoni', 'Umred', 'Kuhi', 'Bhiwapur'],
+  'Patna': ['Patna Sadar', 'Patna City', 'Danapur', 'Barh', 'Masaurhi', 'Paliganj'],
+  'Lucknow': ['Lucknow', 'Malihabad', 'Mohanlalganj', 'Bakshi Ka Talab', 'Sarojininagar'],
+  'Chennai': ['Alandur', 'Ambattur', 'Aminjikarai', 'Ayanavaram', 'Egmore', 'Guindy', 'Mambalam', 'Mylapore', 'Perambur', 'Purasawalkam', 'Sholinganallur', 'Tondiarpet', 'Velachery'],
+  'Bengaluru Urban': ['Bengaluru North', 'Bengaluru South', 'Bengaluru East', 'Anekal', 'Yelahanka'],
+  'Kolkata': ['Kolkata'],
+  'Ahmedabad': ['Ahmedabad City', 'Daskroi', 'Sanand', 'Bavla', 'Dholka', 'Viramgam', 'Mandal', 'Rampur', 'Detroj', 'Dhandhuka']
+};

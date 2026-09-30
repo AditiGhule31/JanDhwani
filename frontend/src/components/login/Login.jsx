@@ -4,12 +4,18 @@ import {
   LANGUAGE_REGIONS, 
   STATES_AND_DISTRICTS, 
   PINCODE_MAP, 
-  EXPANDED_DEMO_CITIZENS 
+  EXPANDED_DEMO_CITIZENS,
+  DISTRICTS_AND_TALUKAS
 } from '../../indiaData';
 import { VALIDATION_RULES } from '../../validators';
 import { UI_STRINGS } from '../../translations';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
 import './Login.css';
+
+// Note: Replace this Client ID with your actual Google OAuth Client ID for production
+const GOOGLE_CLIENT_ID = '378031586524-81r52r9v3430j0j95q9t4g9uq7t1i5of.apps.googleusercontent.com';
 
 function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageChange }) {
   // Step 0: Language Gate state
@@ -35,6 +41,9 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
   mobile: '',
   email: '',
   aadhaar: '',
+  state: '',
+  district: '',
+  taluka: '',
   password: '',
   confirmPassword: ''
 });
@@ -211,14 +220,23 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-    const handleGoogleLogin = async () => {
-    setIsLoggingIn(true);
-    setTimeout(() => {
-      setIsLoggingIn(false);
+  const handleGoogleSuccess = (credentialResponse) => {
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
       setAuthMode('register');
-      setRegData(prev => ({ ...prev, fullName: 'Citizen (Google)', email: 'citizen@gmail.com' }));
-      alert('Google Login Successful! Please complete the remaining mandatory fields (Aadhaar, Mobile, Location).');
-    }, 1000);
+      setRegData(prev => ({ 
+        ...prev, 
+        fullName: decoded.name || 'Citizen (Google)', 
+        email: decoded.email 
+      }));
+      setAlertInfo({ type: 'success', text: `Welcome ${decoded.name}! Please complete Aadhaar, Mobile, and Location.` });
+    } catch (err) {
+      setAlertInfo({ type: 'error', text: 'Error decoding Google Profile' });
+    }
+  };
+
+  const handleGoogleError = () => {
+    setAlertInfo({ type: 'error', text: 'Google Login Failed or was cancelled' });
   };
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -337,13 +355,15 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
      SIGN UP / LOGIN (IN CHOSEN LANGUAGE)
      ========================================================================= */
   const currentDistricts = STATES_AND_DISTRICTS[regData.state] || STATES_AND_DISTRICTS['Maharashtra'];
+  const currentTalukas = DISTRICTS_AND_TALUKAS[regData.district] || [];
 
   return (
-    <div className="login-card">
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <div className="login-card">
       {/* Top Header with Active Language Indicator */}
       <div className="login-header">
         <div className="header-top-bar">
-          <span className="national-badge">JanDhwani DPI</span>
+
           <select 
             className="change-lang-btn"
             value={currentLang}
@@ -514,6 +534,90 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
               </button>
             </div>
 
+          {/* Section 2: Permanent Address */}
+          <div className="section-title" style={{marginTop: '20px'}}>
+            <span>Permanent Address</span>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>State <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="state-list"
+                className={`input-field ${touched.state && errors.state ? 'input-error' : ''}`}
+                placeholder="Search or Select State"
+                value={regData.state || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, state: e.target.value, district: '', taluka: '' });
+                  validateField('state', e.target.value);
+                }}
+                onBlur={() => handleBlur('state')}
+                required
+              />
+              <datalist id="state-list">
+                {Object.keys(STATES_AND_DISTRICTS).map(s => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+              {touched.state && errors.state && (
+                <span className="error-text">{errors.state}</span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>District <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="district-list"
+                className={`input-field ${touched.district && errors.district ? 'input-error' : ''}`}
+                placeholder="Search or Select District"
+                value={regData.district || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, district: e.target.value, taluka: '' });
+                  validateField('district', e.target.value);
+                }}
+                onBlur={() => handleBlur('district')}
+                required
+              />
+              <datalist id="district-list">
+                {currentDistricts.map(d => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
+              {touched.district && errors.district && (
+                <span className="error-text">{errors.district}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Taluka <span className="req">*</span></label>
+              <input 
+                type="text"
+                list="taluka-list"
+                className={`input-field ${touched.taluka && errors.taluka ? 'input-error' : ''}`}
+                placeholder="Search or Enter Taluka"
+                value={regData.taluka || ''}
+                onChange={(e) => {
+                  setRegData({ ...regData, taluka: e.target.value });
+                  validateField('taluka', e.target.value);
+                }}
+                onBlur={() => handleBlur('taluka')}
+                required
+              />
+              <datalist id="taluka-list">
+                {currentTalukas.map(t => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+              {touched.taluka && errors.taluka && (
+                <span className="error-text">{errors.taluka}</span>
+              )}
+            </div>
+          </div>
+
           {/* Section 3: Security */}
           <div className="section-title">
             <span>{t.sec3}</span>
@@ -570,25 +674,15 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
               <div className="guest-divider">
                 <span>OR</span>
               </div>
-              <button 
-                type="button" 
-                className="guest-btn"
-                onClick={handleGoogleLogin}
-                disabled={isLoggingIn}
-                style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '10px',
-                  background: '#fff',
-                  color: '#333',
-                  border: '1px solid #ccc',
-                  marginBottom: '15px'
-                }}
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{width: '24px'}} />
-                {isLoggingIn ? 'Signing in...' : 'Sign in with Google'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="signup_with"
+                  shape="rectangular"
+                  theme="outline"
+                />
+              </div>
             </>
           )}
         </form>
@@ -636,25 +730,15 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
               <div className="guest-divider">
                 <span>OR</span>
               </div>
-              <button 
-                type="button" 
-                className="guest-btn"
-                onClick={handleGoogleLogin}
-                disabled={isLoggingIn}
-                style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '10px',
-                  background: '#fff',
-                  color: '#333',
-                  border: '1px solid #ccc',
-                  marginBottom: '15px'
-                }}
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{width: '24px'}} />
-                {isLoggingIn ? 'Signing in...' : 'Sign in with Google'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="signin_with"
+                  shape="rectangular"
+                  theme="outline"
+                />
+              </div>
               
               <button 
                 type="button" 
@@ -667,7 +751,8 @@ function Login({ onLoginSuccess, onContinueAsGuest, activeLanguage, onLanguageCh
           )}
         </form>
       )}
-    </div>
+      </div>
+    </GoogleOAuthProvider>
   );
 }
 
